@@ -294,7 +294,7 @@ void PlotWidget::canvasContextMenuTriggered(const QPoint& pos)
 }
 
 PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x, std::string name_y,
-                                              QString curve_name)
+                                              QString curve_name, CurveStyle style)
 {
   std::string name = curve_name.toStdString();
 
@@ -369,7 +369,7 @@ PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x, std::string na
 
   QColor color = getColorHint(nullptr);
   curve->setPen(color);
-  setStyle(curve, curveStyle());
+  setStyle(curve, style);
 
   curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
@@ -385,25 +385,26 @@ PlotWidget::CurveInfo* PlotWidget::addCurveXY(std::string name_x, std::string na
   curve_info.curve = curve;
   curve_info.marker = marker;
   curve_info.src_name = name;
+  curve_info.style = style;
   curveList().push_back(curve_info);
 
   return &(curveList().back());
 }
 
-PlotWidgetBase::CurveInfo* PlotWidget::addCurve(const std::string& name, QColor color)
+PlotWidgetBase::CurveInfo* PlotWidget::addCurve(const std::string& name, QColor color, CurveStyle style)
 {
   PlotWidgetBase::CurveInfo* info = nullptr;
 
   auto it1 = _mapped_data.numeric.find(name);
   if (it1 != _mapped_data.numeric.end())
   {
-    info = PlotWidgetBase::addCurve(name, it1->second, color);
+    info = PlotWidgetBase::addCurve(name, it1->second, color, style);
   }
 
   auto it2 = _mapped_data.scatter_xy.find(name);
   if (it2 != _mapped_data.scatter_xy.end())
   {
-    info = PlotWidgetBase::addCurve(name, it2->second, color);
+    info = PlotWidgetBase::addCurve(name, it2->second, color, style);
   }
 
   if (info && info->curve)
@@ -657,31 +658,6 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
   }
   plot_el.appendChild(limitY_el);
 
-  if (curveStyle() == PlotWidgetBase::LINES)
-  {
-    plot_el.setAttribute("style", "Lines");
-  }
-  else if (curveStyle() == PlotWidgetBase::LINES_AND_DOTS)
-  {
-    plot_el.setAttribute("style", "LinesAndDots");
-  }
-  else if (curveStyle() == PlotWidgetBase::DOTS)
-  {
-    plot_el.setAttribute("style", "Dots");
-  }
-  else if (curveStyle() == PlotWidgetBase::STICKS)
-  {
-    plot_el.setAttribute("style", "Sticks");
-  }
-  else if (curveStyle() == PlotWidgetBase::STEPS)
-  {
-    plot_el.setAttribute("style", "Steps");
-  }
-  else if (curveStyle() == PlotWidgetBase::STEPSINV)
-  {
-    plot_el.setAttribute("style", "StepsInv");
-  }
-
   for (auto& it : curveList())
   {
     auto& name = it.src_name;
@@ -689,6 +665,7 @@ QDomElement PlotWidget::xmlSaveState(QDomDocument& doc) const
     QDomElement curve_el = doc.createElement("curve");
     curve_el.setAttribute("name", QString::fromStdString(name));
     curve_el.setAttribute("color", curve->pen().color().name());
+    curve_el.setAttribute("style", curveStyleToString(it.style));
 
     plot_el.appendChild(curve_el);
 
@@ -778,6 +755,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
     QString curve_name = curve_element.attribute("name");
     std::string curve_name_std = curve_name.toStdString();
     QColor color(curve_element.attribute("color"));
+    CurveStyle curve_style = curveStyleFromString(curve_element.attribute("style"));
 
     //-----------------
     if (is_timeseries || is_scatter_xy)
@@ -789,7 +767,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
       }
       else
       {
-        auto curve_info = addCurve(curve_name_std, color);
+        auto curve_info = addCurve(curve_name_std, color, curve_style);
         if (!curve_info)
         {
           continue;
@@ -823,7 +801,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
       }
       else
       {
-        auto curve_it = addCurveXY(curve_x, curve_y, curve_name);
+        auto curve_it = addCurveXY(curve_x, curve_y, curve_name, curve_style);
         if (!curve_it)
         {
           continue;
@@ -859,35 +837,6 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
     rect.setLeft(rectangle.attribute("left").toDouble());
     rect.setRight(rectangle.attribute("right").toDouble());
     this->setZoomRectangle(rect, false);
-  }
-
-  if (plot_widget.hasAttribute("style"))
-  {
-    QString style = plot_widget.attribute("style");
-    if (style == "Lines")
-    {
-      changeCurvesStyle(PlotWidgetBase::LINES);
-    }
-    else if (style == "LinesAndDots")
-    {
-      changeCurvesStyle(PlotWidgetBase::LINES_AND_DOTS);
-    }
-    else if (style == "Dots")
-    {
-      changeCurvesStyle(PlotWidgetBase::DOTS);
-    }
-    else if (style == "Sticks")
-    {
-      changeCurvesStyle(PlotWidgetBase::STICKS);
-    }
-    else if (style == "Steps")
-    {
-      changeCurvesStyle(PlotWidgetBase::STEPS);
-    }
-    else if (style == "StepsInv")
-    {
-      changeCurvesStyle(PlotWidgetBase::STEPSINV);
-    }
   }
 
   QString bg_data = plot_widget.attribute("background_data");
@@ -1688,6 +1637,60 @@ bool PlotWidget::canvasEventFilter(QEvent* event)
 
   return false;
 }
+
+QString PlotWidget::curveStyleToString(CurveStyle style) const
+{
+  if (style == PlotWidgetBase::LINES_AND_DOTS)
+  {
+    return "LinesAndDots";
+  }
+  else if (style == PlotWidgetBase::DOTS)
+  {
+    return "Dots";
+  }
+  else if (style == PlotWidgetBase::STICKS)
+  {
+    return "Sticks";
+  }
+  else if (style == PlotWidgetBase::STEPS)
+  {
+    return "Steps";
+  }
+  else if (style == PlotWidgetBase::STEPSINV)
+  {
+    return "StepsInv";
+  }
+
+  return "Lines"; // PlotWidgetBase::LINES
+}
+
+PlotWidgetBase::CurveStyle PlotWidget::curveStyleFromString(const QString& style_name) const
+{
+  if (style_name == "LinesAndDots")
+  {
+    return PlotWidgetBase::LINES_AND_DOTS;
+  }
+  else if (style_name == "Dots")
+  {
+    return PlotWidgetBase::DOTS;
+  }
+  else if (style_name == "Sticks")
+  {
+    return PlotWidgetBase::STICKS;
+  }
+  else if (style_name == "Steps")
+  {
+    return PlotWidgetBase::STEPS;
+  }
+  else if (style_name == "StepsInv")
+  {
+    return PlotWidgetBase::STEPSINV;
+  }
+
+  return PlotWidgetBase::LINES; // "Lines"
+}
+
+
 
 void PlotWidget::setDefaultRangeX()
 {

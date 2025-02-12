@@ -72,6 +72,8 @@ private slots:
 
   void on_pushButtonReset_clicked();
 
+  void on_pushButtonApplyToAll_clicked();
+
   void on_pushButtonCancel_pressed();
 
   void on_pushButtonSave_pressed();
@@ -104,6 +106,8 @@ private:
   void updateLimits();
   void onDeleteRow(QWidget* w);
   void disableWidgets();
+  void updateRadioButtonsFromCurveStyle(const QString& curve_title);
+  void updateSelectedCurvesStyle(PlotWidgetBase::CurveStyle style);
 
   std::unordered_map<std::string, std::shared_ptr<TransformFunction>> _transforms;
 };

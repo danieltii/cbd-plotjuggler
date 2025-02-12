@@ -42,6 +42,7 @@ public:
     std::string src_name;
     QwtPlotCurve* curve;
     QwtPlotMarker* marker;
+    CurveStyle style;
   };
 
   PlotWidgetBase(QWidget* parent);
@@ -49,7 +50,7 @@ public:
   virtual ~PlotWidgetBase();
 
   virtual CurveInfo* addCurve(const std::string& name, PlotDataXY& src_data,
-                              QColor color = Qt::transparent);
+                              QColor color = Qt::transparent, CurveStyle style = LINES);
 
   virtual void removeCurve(const QString& title);
 
@@ -83,7 +84,9 @@ public:
 
   bool isZoomEnabled() const;
 
-  void changeCurvesStyle(CurveStyle style);
+  void changeCurveStyle(const QString& title, CurveStyle style);
+
+  void changeAllCurvesStyle(CurveStyle style);
 
   bool isXYPlot() const;
 
@@ -91,7 +94,7 @@ public:
 
   QRectF maxZoomRect() const;
 
-  CurveStyle curveStyle() const;
+  CurveStyle curveStyle(const QString& title) const;
 
   bool keepRatioXY() const;
 

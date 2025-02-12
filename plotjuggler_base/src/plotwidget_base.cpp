@@ -140,8 +140,6 @@ public:
 
   std::list<CurveInfo> curve_list;
 
-  CurveStyle curve_style = LINES;
-
   bool zoom_enabled = true;
 
   void dragEnterEvent(QDragEnterEvent* event) override
@@ -389,7 +387,7 @@ PlotWidgetBase::~PlotWidgetBase()
 }
 
 PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
-                                                    PlotDataXY& data, QColor color)
+                                                    PlotDataXY& data, QColor color, CurveStyle style)
 {
   const auto qname = QString::fromStdString(name);
 
@@ -429,7 +427,7 @@ PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
   }
 
   curve->setPen(color);
-  setStyle(curve, p->curve_style);
+  setStyle(curve, style);
 
   curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
@@ -447,6 +445,7 @@ PlotWidgetBase::CurveInfo* PlotWidgetBase::addCurve(const std::string& name,
   curve_info.curve = curve;
   curve_info.marker = marker;
   curve_info.src_name = name;
+  curve_info.style = style;
 
   p->curve_list.push_back(curve_info);
 
@@ -496,9 +495,18 @@ QwtSeriesWrapper* PlotWidgetBase::createTimeSeries(const PlotData* data,
   return output;
 }
 
-PlotWidgetBase::CurveStyle PlotWidgetBase::curveStyle() const
+PlotWidgetBase::CurveStyle PlotWidgetBase::curveStyle(const QString& title) const
 {
-  return p->curve_style;
+  auto it = std::find_if(p->curve_list.begin(), p->curve_list.end(),
+                         [&title](const PlotWidgetBase::CurveInfo& info) {
+                           return info.curve->title() == title;
+                         });
+
+  if (it != p->curve_list.end())
+  {
+    return it->style;
+  }
+  return LINES;
 }
 
 bool PlotWidgetBase::keepRatioXY() const
@@ -724,11 +732,26 @@ void PlotWidgetBase::setStyle(QwtPlotCurve* curve, CurveStyle style)
   }
 }
 
-void PlotWidgetBase::changeCurvesStyle(CurveStyle style)
+void PlotWidgetBase::changeCurveStyle(const QString& title, CurveStyle style)
 {
-  p->curve_style = style;
+  auto it = std::find_if(p->curve_list.begin(), p->curve_list.end(),
+                         [&title](const PlotWidgetBase::CurveInfo& info) {
+                           return info.curve->title() == title;
+                         });
+
+  if (it != p->curve_list.end())
+  {
+    it->style = style;
+    setStyle(it->curve, style);
+    replot();
+  }
+}
+
+void PlotWidgetBase::changeAllCurvesStyle(CurveStyle style)
+{
   for (auto& it : p->curve_list)
   {
+    it.style = style;
     setStyle(it.curve, style);
   }
   replot();

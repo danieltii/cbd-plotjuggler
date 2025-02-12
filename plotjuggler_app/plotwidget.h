@@ -66,9 +66,9 @@ public:
     return _mapped_data;
   }
 
-  CurveInfo* addCurveXY(std::string name_x, std::string name_y, QString curve_name = "");
+  CurveInfo* addCurveXY(std::string name_x, std::string name_y, QString curve_name = "", CurveStyle style = LINES);
 
-  CurveInfo* addCurve(const std::string& name, QColor color = Qt::transparent);
+  CurveInfo* addCurve(const std::string& name, QColor color = Qt::transparent, CurveStyle style = LINES);
 
   void setCustomAxisLimits(Range range);
 
@@ -91,6 +91,8 @@ protected:
   void onDropEvent(QDropEvent* event);
 
   bool canvasEventFilter(QEvent* event);
+  QString curveStyleToString(CurveStyle style) const;
+  CurveStyle curveStyleFromString(const QString& style_name) const;
 
 signals:
   void swapWidgetsRequested(PlotWidget* source, PlotWidget* destination);

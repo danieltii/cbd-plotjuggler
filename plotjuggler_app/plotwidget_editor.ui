@@ -37,7 +37,7 @@
      <property name="minimumSize">
       <size>
        <width>800</width>
-       <height>300</height>
+       <height>250</height>
       </size>
      </property>
      <property name="frameShape">
@@ -341,7 +341,7 @@
               </property>
              </widget>
             </item>
-             <item>
+            <item>
              <widget class="QRadioButton" name="radioSteps">
               <property name="text">
                <string>Steps (pre)</string>
@@ -357,6 +357,17 @@
             </item>
            </layout>
           </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="frameStyleButons">
+           <item>
+            <widget class="QPushButton" name="pushButtonApplyToAll">
+             <property name="text">
+              <string>Apply to All</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QLabel" name="label_2">

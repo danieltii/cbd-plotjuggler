@@ -52,31 +52,6 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   QSettings settings;
   restoreGeometry(settings.value("PlotwidgetEditor.geometry").toByteArray());
 
-  if (_plotwidget->curveStyle() == PlotWidgetBase::LINES)
-  {
-    ui->radioLines->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::DOTS)
-  {
-    ui->radioPoints->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STICKS)
-  {
-    ui->radioSticks->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STEPS)
-  {
-    ui->radioSteps->setChecked(true);
-  }
-  else if (_plotwidget->curveStyle() == PlotWidgetBase::STEPSINV)
-  {
-    ui->radioStepsInv->setChecked(true);
-  }
-  else
-  {
-    ui->radioBoth->setChecked(true);
-  }
-
   ui->lineLimitMax->setValidator(new QDoubleValidator(this));
   ui->lineLimitMin->setValidator(new QDoubleValidator(this));
 
@@ -110,6 +85,14 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   if (ui->listWidget->count() != 0)
   {
     ui->listWidget->item(0)->setSelected(true);
+
+    auto item = ui->listWidget->item(0);
+    auto itemWidget = ui->listWidget->itemWidget(item);
+    auto row_widget = dynamic_cast<EditorRowWidget*>(itemWidget);
+    if(row_widget)
+    { 
+      updateRadioButtonsFromCurveStyle(row_widget->text());
+    }
   }
 }
 
@@ -205,6 +188,7 @@ void PlotwidgetEditor::disableWidgets()
 
   ui->frameLimits->setEnabled(false);
   ui->frameStyle->setEnabled(false);
+  ui->pushButtonApplyToAll->setEnabled(false);
 }
 
 void PlotwidgetEditor::setupTable()
@@ -288,7 +272,7 @@ void PlotwidgetEditor::on_radioLines_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES);
+    updateSelectedCurvesStyle(PlotWidgetBase::LINES);
   }
 }
 
@@ -296,7 +280,7 @@ void PlotwidgetEditor::on_radioPoints_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::DOTS);
+    updateSelectedCurvesStyle(PlotWidgetBase::DOTS);
   }
 }
 
@@ -304,7 +288,7 @@ void PlotwidgetEditor::on_radioBoth_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::LINES_AND_DOTS);
+    updateSelectedCurvesStyle(PlotWidgetBase::LINES_AND_DOTS);
   }
 }
 
@@ -312,7 +296,7 @@ void PlotwidgetEditor::on_radioSticks_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STICKS);
+    updateSelectedCurvesStyle(PlotWidgetBase::STICKS);
   }
 }
 
@@ -320,7 +304,7 @@ void PlotwidgetEditor::on_radioSteps_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPS);
+    updateSelectedCurvesStyle(PlotWidgetBase::STEPS);
   }
 }
 
@@ -328,7 +312,7 @@ void PlotwidgetEditor::on_radioStepsInv_toggled(bool checked)
 {
   if (checked)
   {
-    _plotwidget->changeCurvesStyle(PlotWidgetBase::STEPSINV);
+    updateSelectedCurvesStyle(PlotWidgetBase::STEPSINV);
   }
 }
 
@@ -357,6 +341,25 @@ void PlotwidgetEditor::on_pushButtonReset_clicked()
 
   ui->lineLimitMin->setText(QString::number(limits.min));
   ui->lineLimitMax->setText(QString::number(limits.max));
+}
+
+void PlotwidgetEditor::on_pushButtonApplyToAll_clicked()
+{
+  auto selected_items = ui->listWidget->selectedItems();
+  if (selected_items.size() != 1 || ui->listWidget->count() == 0)
+  {
+    return;
+  }
+
+  auto item = selected_items.front();
+  auto itemWidget = ui->listWidget->itemWidget(item);
+  auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+  if(row_widget)
+  { 
+    QString curve_title = row_widget->text();
+    auto curve_style = _plotwidget->curveStyle(curve_title);
+    _plotwidget->changeAllCurvesStyle(curve_style);
+  }
 }
 
 void PlotwidgetEditor::on_lineLimitMax_textChanged(const QString&)
@@ -465,5 +468,54 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
   if (row_widget)
   {
     ui->editColotText->setText(row_widget->color().name());
+    updateRadioButtonsFromCurveStyle(row_widget->text());
   }
 }
+
+void PlotwidgetEditor::updateRadioButtonsFromCurveStyle(const QString& curve_title)
+{
+  if (_plotwidget->curveStyle(curve_title) == PlotWidgetBase::LINES)
+  {
+    ui->radioLines->setChecked(true);
+  }
+  else if (_plotwidget->curveStyle(curve_title) == PlotWidgetBase::DOTS)
+  {
+    ui->radioPoints->setChecked(true);
+  }
+  else if (_plotwidget->curveStyle(curve_title) == PlotWidgetBase::STICKS)
+  {
+    ui->radioSticks->setChecked(true);
+  }
+  else if (_plotwidget->curveStyle(curve_title) == PlotWidgetBase::STEPS)
+  {
+    ui->radioSteps->setChecked(true);
+  }
+  else if (_plotwidget->curveStyle(curve_title) == PlotWidgetBase::STEPSINV)
+  {
+    ui->radioStepsInv->setChecked(true);
+  }
+  else
+  {
+    ui->radioBoth->setChecked(true);
+  }
+}
+
+void PlotwidgetEditor::updateSelectedCurvesStyle(PlotWidgetBase::CurveStyle style)
+{
+  auto selected_items = ui->listWidget->selectedItems();
+  if (selected_items.size() != 1 || ui->listWidget->count() == 0)
+  {
+    return;
+  }
+
+  auto item = selected_items.front();
+  auto itemWidget = ui->listWidget->itemWidget(item);
+  auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+  if(row_widget)
+  { 
+    QString curve_title = row_widget->text();
+    _plotwidget->changeCurveStyle(curve_title, style);
+  }
+}
+
+
