@@ -787,6 +787,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
           ts->setAlias(alias);
           curve->setTitle(alias);
         }
+        changeCurveStyle(curve_name, curve_style);
       }
     }
     //-----------------
@@ -810,6 +811,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
         curve_it->marker->setSymbol(
             new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8)));
         added_curve_names.insert(curve_name_std);
+        changeCurveStyle(curve_name, curve_style);
       }
     }
   }
