@@ -450,9 +450,24 @@ void QwtPlotCurve::drawCurve( QPainter* painter, int style,
         case Steps:
             drawSteps( painter, xMap, yMap, canvasRect, from, to );
             break;
-        case Dots:
+        case Dots: {
+
+            QPen prev_pen = painter->pen();
+            QPen new_pen = prev_pen;
+
+        
+            double displayedDataSize = xMap.s2() - xMap.s1();
+            double totalDataSize = maxXValue() - minXValue();
+            if (totalDataSize > 0.0)
+            {
+                double displayedDataRatio = displayedDataSize / totalDataSize;
+                if (displayedDataRatio < 0.04)
+                    new_pen.setWidth(prev_pen.width() + 1.6);
+            }
+            painter->setPen(new_pen);
             drawDots( painter, xMap, yMap, canvasRect, from, to );
-            break;
+            painter->setPen(prev_pen);
+        } break;
         case LinesAndDots: {
           if (testCurveAttribute(Fitted)) {
             from = 0;
@@ -462,7 +477,7 @@ void QwtPlotCurve::drawCurve( QPainter* painter, int style,
 
           QPen prev_pen = painter->pen();
           QPen new_pen = prev_pen;
-          new_pen.setWidth(prev_pen.width() * 3);
+          new_pen.setWidth(prev_pen.width() * 4);
 
           painter->setPen(new_pen);
           drawDots(painter, xMap, yMap, canvasRect, from, to);
