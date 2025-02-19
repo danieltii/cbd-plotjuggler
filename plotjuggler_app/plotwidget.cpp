@@ -459,6 +459,33 @@ void PlotWidget::onDataSourceRemoved(const std::string& src_name)
   }
 }
 
+void PlotWidget::changeCurvePositionInList(size_t current_pos_index, size_t list_item_separator_index)
+{
+  if (current_pos_index == list_item_separator_index || current_pos_index + 1 == list_item_separator_index) {
+      return;
+  }
+
+  auto it_current = std::next(curveList().begin(), current_pos_index);
+  auto it_target = std::next(curveList().begin(), list_item_separator_index);
+
+  if (current_pos_index > list_item_separator_index) {
+      curveList().splice(it_target, curveList(), it_current);
+  } else {
+      curveList().splice(it_target, curveList(), it_current, std::next(it_current));
+  }
+  for (auto& it : curveList())
+  {
+    if (it.curve->isVisible())
+    {
+      it.curve->setVisible(false);
+      it.curve->setVisible(true);
+    }
+  }
+  this->setVisible(false);
+  this->setVisible(true);
+  
+}
+
 void PlotWidget::removeAllCurves()
 {
   PlotWidgetBase::removeAllCurves();

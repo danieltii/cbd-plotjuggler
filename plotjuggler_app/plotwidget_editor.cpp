@@ -114,6 +114,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   _list_widget->setEditTriggers(QAbstractItemView::NoEditTriggers);
   _list_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   connect(_list_widget->model(), &QAbstractItemModel::rowsMoved, this, &PlotwidgetEditor::onRowsMoved);
+  connect(_list_widget, &QListWidget::itemSelectionChanged, this, &PlotwidgetEditor::listWidgetItemSelectionChanged);
 
   if (_list_widget->count() != 0)
   {
@@ -161,13 +162,14 @@ void PlotwidgetEditor::onColorChanged(QColor c)
 
 void PlotwidgetEditor::onRowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)
 {
-    int sourceIndex = start;
-    int destinationIndex = row;
-    
-    if (sourceIndex > destinationIndex) {
-        sourceIndex++;
-    }
-    qDebug() << "onRowsMoved " << start << "   " << row;
+  int sourceIndex = start;
+  int destinationIndex = row;
+
+  QDomDocument doc;
+  _plotwidget->changeCurvePositionInList(sourceIndex, destinationIndex);
+  auto saved_state = _plotwidget->xmlSaveState(doc);
+  _plotwidget->xmlLoadState(saved_state);
+
 }
 
 void PlotwidgetEditor::setupColorWidget()
@@ -490,7 +492,7 @@ QColor EditorRowWidget::color() const
   return _color;
 }
 
-void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
+void PlotwidgetEditor::listWidgetItemSelectionChanged()
 {
   auto selected = _list_widget->selectedItems();
   if (selected.size() == 0 || _list_widget->count() == 0)

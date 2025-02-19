@@ -95,7 +95,7 @@ private slots:
 
   void on_pushButtonSave_pressed();
 
-  void on_listWidget_itemSelectionChanged();
+  void listWidgetItemSelectionChanged();
 
   void on_lineLimitMin_textChanged(const QString& text);
 

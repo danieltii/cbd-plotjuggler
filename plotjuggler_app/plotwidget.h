@@ -110,6 +110,8 @@ public slots:
 
   void onDataSourceRemoved(const std::string& src_name);
 
+  void changeCurvePositionInList(size_t current_pos_index, size_t new_pos_index);
+
   void removeAllCurves() override;
 
   void on_panned(int dx, int dy);
