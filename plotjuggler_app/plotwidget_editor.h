@@ -9,6 +9,7 @@
 
 #include <QDialog>
 #include <QKeyEvent>
+#include <QDragMoveEvent>
 #include "plotwidget.h"
 #include "color_wheel.hpp"
 #include "color_preview.hpp"
@@ -19,6 +20,20 @@ namespace Ui
 class PlotWidgetEditor;
 }
 
+namespace bugfix
+{
+class QListWidgetDragMovement : public QListWidget
+{
+    Q_OBJECT
+
+public:
+    QListWidgetDragMovement(QWidget *parent = nullptr);
+    ~QListWidgetDragMovement() override;
+
+protected:
+    void dragMoveEvent(QDragMoveEvent *e) override;
+};
+}
 class EditorRowWidget : public QWidget
 {
   Q_OBJECT
@@ -55,6 +70,8 @@ public:
 
 public slots:
   void onColorChanged(QColor c);
+
+  void onRowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row);
 
 private slots:
 
@@ -98,6 +115,7 @@ private:
   PlotWidget* _plotwidget;
   PlotWidget* _plotwidget_origin;
   QRectF _bounding_rect_original;
+  bugfix::QListWidgetDragMovement* _list_widget;
 
   std::set<QWidget*> _connected_transform_widgets;
 
