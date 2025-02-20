@@ -9,7 +9,6 @@
 
 #include <QDialog>
 #include <QKeyEvent>
-#include <QDragMoveEvent>
 #include "plotwidget.h"
 #include "color_wheel.hpp"
 #include "color_preview.hpp"
@@ -20,25 +19,17 @@ namespace Ui
 class PlotWidgetEditor;
 }
 
-namespace bugfix
-{
-class QListWidgetDragMovement : public QListWidget
-{
-    Q_OBJECT
-
-public:
-    QListWidgetDragMovement(QWidget *parent = nullptr);
-    ~QListWidgetDragMovement() override;
-
-protected:
-    void dragMoveEvent(QDragMoveEvent *e) override;
-};
-}
 class EditorRowWidget : public QWidget
 {
   Q_OBJECT
 
 public:
+  enum RowMovement
+  {
+    UP,
+    DOWN
+  };
+
   EditorRowWidget(QString text, QColor color);
 
   void enterEvent(QEvent* ev) override;
@@ -52,11 +43,14 @@ public:
 signals:
 
   void deleteRow(QWidget* _this);
+  void moveRow(QWidget* _this, RowMovement direction);
 
 private:
   QLabel* _text;
   QColor _color;
   QPushButton* _delete_button;
+  QPushButton* _move_up_button;
+  QPushButton* _move_down_button;
   QWidget* _empty_spacer;
 };
 
@@ -95,7 +89,7 @@ private slots:
 
   void on_pushButtonSave_pressed();
 
-  void listWidgetItemSelectionChanged();
+  void on_listWidget_itemSelectionChanged();
 
   void on_lineLimitMin_textChanged(const QString& text);
 
@@ -115,7 +109,6 @@ private:
   PlotWidget* _plotwidget;
   PlotWidget* _plotwidget_origin;
   QRectF _bounding_rect_original;
-  bugfix::QListWidgetDragMovement* _list_widget;
 
   std::set<QWidget*> _connected_transform_widgets;
 
@@ -123,6 +116,7 @@ private:
   void setupTable();
   void updateLimits();
   void onDeleteRow(QWidget* w);
+  void onMoveRow(QWidget* row, EditorRowWidget::RowMovement direction);
   void disableWidgets();
   void updateRadioButtonsFromCurveStyle(const QString& curve_title);
   void updateSelectedCurvesStyle(PlotWidgetBase::CurveStyle style);
