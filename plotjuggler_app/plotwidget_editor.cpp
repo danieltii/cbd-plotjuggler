@@ -29,6 +29,7 @@ QListWidgetDragMovement::QListWidgetDragMovement(QWidget * parent)
 
 QListWidgetDragMovement::~QListWidgetDragMovement()
 {
+  qDebug() << "QListWidgetDragMovement destructor executed";
 }
 
 void QListWidgetDragMovement::dragMoveEvent(QDragMoveEvent *e)
@@ -58,6 +59,13 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   QDomDocument doc;
   auto saved_state = plotwidget->xmlSaveState(doc);
 
+  qDebug() << "---------- _plotwidget_origin list order: ----------";
+  for (auto& it : _plotwidget_origin->curveList())
+  {
+    qDebug() << QString::fromStdString(it.src_name);
+  }
+  qDebug() << "";
+
   _plotwidget = new PlotWidget(plotwidget->datamap(), this);
   _plotwidget->xmlLoadState(saved_state);
   _plotwidget->on_changeTimeOffset(plotwidget->timeOffset());
@@ -72,7 +80,21 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
 
   _plotwidget->zoomOut(false);
 
+  qDebug() << "---------- _plotwidget list order before setupTable(): ----------";
+  for (auto& it : _plotwidget->curveList())
+  {
+    qDebug() << QString::fromStdString(it.src_name);
+  }
+  qDebug() << "";
+
   setupTable();
+
+  qDebug() << "---------- _plotwidget list order after setupTable(): ----------";
+  for (auto& it : _plotwidget->curveList())
+  {
+    qDebug() << QString::fromStdString(it.src_name);
+  }
+  qDebug() << "";
 
   QSettings settings;
   restoreGeometry(settings.value("PlotwidgetEditor.geometry").toByteArray());
@@ -137,6 +159,7 @@ PlotwidgetEditor::~PlotwidgetEditor()
 
   delete _plotwidget;
   delete ui;
+  qDebug() << "PlotwidgetEditor destructor finished";
 }
 
 void PlotwidgetEditor::onColorChanged(QColor c)
@@ -242,16 +265,16 @@ void PlotwidgetEditor::setupTable()
   std::map<QString, QColor> colors = _plotwidget->getCurveColors();
 
   int row = 0;
-  for (auto& it : colors)
+  for (auto& it : _plotwidget->curveList())
   {
-    auto alias = it.first;
-    auto color = it.second;
+    auto curve_name = QString::fromStdString(it.src_name);
+    auto color = colors.at(curve_name);
     auto item = new QListWidgetItem();
-    // even if it is not visible, we store here the original name (not alias)
-    item->setData(Qt::UserRole, it.first);
+    // even if it is not visible, we store here the original name (not curve_name)
+    item->setData(Qt::UserRole, curve_name);
 
     _list_widget->addItem(item);
-    auto plot_row = new EditorRowWidget(alias, color);
+    auto plot_row = new EditorRowWidget(curve_name, color);
     item->setSizeHint(plot_row->sizeHint());
     _list_widget->setItemWidget(item, plot_row);
 

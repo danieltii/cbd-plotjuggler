@@ -465,25 +465,23 @@ void PlotWidget::changeCurvePositionInList(size_t current_pos_index, size_t list
       return;
   }
 
-  auto it_current = std::next(curveList().begin(), current_pos_index);
-  auto it_target = std::next(curveList().begin(), list_item_separator_index);
+  auto& curve_list = curveList();
+
+  auto it_current = std::next(curve_list.begin(), current_pos_index);
+  auto it_target = std::next(curve_list.begin(), list_item_separator_index);
 
   if (current_pos_index > list_item_separator_index) {
-      curveList().splice(it_target, curveList(), it_current);
+    curve_list.splice(it_target, curve_list, it_current);
   } else {
-      curveList().splice(it_target, curveList(), it_current, std::next(it_current));
+    curve_list.splice(it_target, curve_list, it_current, std::next(it_current));
   }
+  qDebug() << "---------- New curve list order: ----------";
   for (auto& it : curveList())
   {
-    if (it.curve->isVisible())
-    {
-      it.curve->setVisible(false);
-      it.curve->setVisible(true);
-    }
+    qDebug() << QString::fromStdString(it.src_name);
   }
-  this->setVisible(false);
-  this->setVisible(true);
-  
+  qDebug() << "";
+
 }
 
 void PlotWidget::removeAllCurves()
