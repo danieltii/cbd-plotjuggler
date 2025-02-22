@@ -475,13 +475,6 @@ void PlotWidget::changeCurvePositionInList(size_t current_pos_index, size_t list
   } else {
     curve_list.splice(it_target, curve_list, it_current, std::next(it_current));
   }
-  qDebug() << "---------- New curve list order: ----------";
-  for (auto& it : curveList())
-  {
-    qDebug() << QString::fromStdString(it.src_name);
-  }
-  qDebug() << "";
-
 }
 
 void PlotWidget::removeAllCurves()

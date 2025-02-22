@@ -14,7 +14,6 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QDialogButtonBox>
-#include <QDebug>
 #include "qwt_text.h"
 #include <QTimer>
 
@@ -29,7 +28,6 @@ QListWidgetDragMovement::QListWidgetDragMovement(QWidget * parent)
 
 QListWidgetDragMovement::~QListWidgetDragMovement()
 {
-  qDebug() << "QListWidgetDragMovement destructor executed";
 }
 
 void QListWidgetDragMovement::dragMoveEvent(QDragMoveEvent *e)
@@ -59,13 +57,6 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   QDomDocument doc;
   auto saved_state = plotwidget->xmlSaveState(doc);
 
-  qDebug() << "---------- _plotwidget_origin list order: ----------";
-  for (auto& it : _plotwidget_origin->curveList())
-  {
-    qDebug() << QString::fromStdString(it.src_name);
-  }
-  qDebug() << "";
-
   _plotwidget = new PlotWidget(plotwidget->datamap(), this);
   _plotwidget->xmlLoadState(saved_state);
   _plotwidget->on_changeTimeOffset(plotwidget->timeOffset());
@@ -80,21 +71,7 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
 
   _plotwidget->zoomOut(false);
 
-  qDebug() << "---------- _plotwidget list order before setupTable(): ----------";
-  for (auto& it : _plotwidget->curveList())
-  {
-    qDebug() << QString::fromStdString(it.src_name);
-  }
-  qDebug() << "";
-
   setupTable();
-
-  qDebug() << "---------- _plotwidget list order after setupTable(): ----------";
-  for (auto& it : _plotwidget->curveList())
-  {
-    qDebug() << QString::fromStdString(it.src_name);
-  }
-  qDebug() << "";
 
   QSettings settings;
   restoreGeometry(settings.value("PlotwidgetEditor.geometry").toByteArray());
@@ -159,7 +136,6 @@ PlotwidgetEditor::~PlotwidgetEditor()
 
   delete _plotwidget;
   delete ui;
-  qDebug() << "PlotwidgetEditor destructor finished";
 }
 
 void PlotwidgetEditor::onColorChanged(QColor c)
