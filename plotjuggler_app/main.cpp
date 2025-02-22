@@ -347,14 +347,14 @@ int main(int argc, char* argv[])
   QIcon app_icon("://resources/plotjuggler.svg");
   QApplication::setWindowIcon(app_icon);
 
-  QNetworkAccessManager manager_new_release;
-  QObject::connect(&manager_new_release, &QNetworkAccessManager::finished,
-                   OpenNewReleaseDialog);
+  // QNetworkAccessManager manager_new_release;
+  // QObject::connect(&manager_new_release, &QNetworkAccessManager::finished,
+  //                  OpenNewReleaseDialog);
 
-  QNetworkRequest request_new_release;
-  request_new_release.setUrl(QUrl("https://api.github.com/repos/facontidavide/"
-                                  "PlotJuggler/releases/latest"));
-  manager_new_release.get(request_new_release);
+  // QNetworkRequest request_new_release;
+  // request_new_release.setUrl(QUrl("https://api.github.com/repos/facontidavide/"
+  //                                 "PlotJuggler/releases/latest"));
+  // manager_new_release.get(request_new_release);
 
   MainWindow* window = nullptr;
 
@@ -371,14 +371,15 @@ int main(int argc, char* argv[])
    * data. Please don't do it.
    */
 
-  bool first_changelog = settings.value("Changelog/first", true).toBool();
-  bool dont_changelog = settings.value("Changelog/dont", false).toBool();
+  // bool first_changelog = settings.value("Changelog/first", true).toBool();
+  // bool dont_changelog = settings.value("Changelog/dont", false).toBool();
 
-  if (first_changelog && !dont_changelog)
-  {
-    ShowChangelogDialog();
-  }
-  else if (!parser.isSet(nosplash_option) &&
+  // if (first_changelog && !dont_changelog)
+  // {
+  //   ShowChangelogDialog();
+  // }
+  // else 
+  if (!parser.isSet(nosplash_option) &&
            !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
   // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
   {

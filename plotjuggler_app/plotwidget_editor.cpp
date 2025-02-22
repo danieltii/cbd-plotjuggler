@@ -14,16 +14,40 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QDialogButtonBox>
-#include <QDebug>
 #include "qwt_text.h"
+#include <QTimer>
 
 const double MAX_DOUBLE = std::numeric_limits<double>::max() / 2;
+
+namespace bugfix
+{
+QListWidgetDragMovement::QListWidgetDragMovement(QWidget * parent)
+  : QListWidget(parent)
+{
+}
+
+QListWidgetDragMovement::~QListWidgetDragMovement()
+{
+}
+
+void QListWidgetDragMovement::dragMoveEvent(QDragMoveEvent *e)
+{
+    if ((row(itemAt(e->pos())) == currentRow() + 1) 
+        || (currentRow() == count() - 1 && row(itemAt(e->pos())) == -1)) {
+        e->ignore();
+    }
+    else {
+        QListWidget::dragMoveEvent(e);
+    }
+}
+}
 
 PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
   : QDialog(parent), ui(new Ui::PlotWidgetEditor), _plotwidget_origin(plotwidget)
 {
   ui->setupUi(this);
-
+  _list_widget = new bugfix::QListWidgetDragMovement();
+  ui->verticalLayout_3->addWidget(_list_widget);
   installEventFilter(this);
 
   //  setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
@@ -79,15 +103,24 @@ PlotwidgetEditor::PlotwidgetEditor(PlotWidget* plotwidget, QWidget* parent)
     ui->lineLimitMax->setText(QString::number(suggested_limits.max));
   }
 
-  // ui->listWidget->widget_background_disabled("QListView::item:selected { background:
-  // #ddeeff; }");
+  // _list_widget->widget_background_disabled("QListView::item:selected { background:
+  // #ddeeff; }"); 
+  
+  _list_widget->setDragDropMode(QAbstractItemView::InternalMove);
+  _list_widget->setSelectionMode(QAbstractItemView::SingleSelection);
+  _list_widget->setDragEnabled(true);
+  _list_widget->setAcceptDrops(true);
+  _list_widget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  _list_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(_list_widget->model(), &QAbstractItemModel::rowsMoved, this, &PlotwidgetEditor::onRowsMoved);
+  connect(_list_widget, &QListWidget::itemSelectionChanged, this, &PlotwidgetEditor::listWidgetItemSelectionChanged);
 
-  if (ui->listWidget->count() != 0)
+  if (_list_widget->count() != 0)
   {
-    ui->listWidget->item(0)->setSelected(true);
+    _list_widget->item(0)->setSelected(true);
 
-    auto item = ui->listWidget->item(0);
-    auto itemWidget = ui->listWidget->itemWidget(item);
+    auto item = _list_widget->item(0);
+    auto itemWidget = _list_widget->itemWidget(item);
     auto row_widget = dynamic_cast<EditorRowWidget*>(itemWidget);
     if(row_widget)
     { 
@@ -107,7 +140,7 @@ PlotwidgetEditor::~PlotwidgetEditor()
 
 void PlotwidgetEditor::onColorChanged(QColor c)
 {
-  auto selected = ui->listWidget->selectedItems();
+  auto selected = _list_widget->selectedItems();
   if (selected.size() != 1)
   {
     return;
@@ -115,7 +148,7 @@ void PlotwidgetEditor::onColorChanged(QColor c)
   auto item = selected.front();
   if (item)
   {
-    auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+    auto row_widget = dynamic_cast<EditorRowWidget*>(_list_widget->itemWidget(item));
     auto name = row_widget->text();
     if (row_widget->color() != c)
     {
@@ -124,6 +157,18 @@ void PlotwidgetEditor::onColorChanged(QColor c)
 
     _plotwidget->on_changeCurveColor(item->data(Qt::UserRole).toString(), c);
   }
+}
+
+void PlotwidgetEditor::onRowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &destination, int row)
+{
+  int sourceIndex = start;
+  int destinationIndex = row;
+
+  QDomDocument doc;
+  _plotwidget->changeCurvePositionInList(sourceIndex, destinationIndex);
+  auto saved_state = _plotwidget->xmlSaveState(doc);
+  _plotwidget->xmlLoadState(saved_state);
+
 }
 
 void PlotwidgetEditor::setupColorWidget()
@@ -157,16 +202,16 @@ void PlotwidgetEditor::setupColorWidget()
 
 void PlotwidgetEditor::onDeleteRow(QWidget* w)
 {
-  int row_count = ui->listWidget->count();
+  int row_count = _list_widget->count();
   for (int row = 0; row < row_count; row++)
   {
-    auto item = ui->listWidget->item(row);
-    auto widget = ui->listWidget->itemWidget(item);
+    auto item = _list_widget->item(row);
+    auto widget = _list_widget->itemWidget(item);
     if (widget == w)
     {
       QString curve = dynamic_cast<EditorRowWidget*>(w)->text();
 
-      ui->listWidget->takeItem(row);
+      _list_widget->takeItem(row);
       _plotwidget->removeCurve(curve);
       widget->deleteLater();
       row_count--;
@@ -196,18 +241,18 @@ void PlotwidgetEditor::setupTable()
   std::map<QString, QColor> colors = _plotwidget->getCurveColors();
 
   int row = 0;
-  for (auto& it : colors)
+  for (auto& it : _plotwidget->curveList())
   {
-    auto alias = it.first;
-    auto color = it.second;
+    auto curve_name = QString::fromStdString(it.src_name);
+    auto color = colors.at(curve_name);
     auto item = new QListWidgetItem();
-    // even if it is not visible, we store here the original name (not alias)
-    item->setData(Qt::UserRole, it.first);
+    // even if it is not visible, we store here the original name (not curve_name)
+    item->setData(Qt::UserRole, curve_name);
 
-    ui->listWidget->addItem(item);
-    auto plot_row = new EditorRowWidget(alias, color);
+    _list_widget->addItem(item);
+    auto plot_row = new EditorRowWidget(curve_name, color);
     item->setSizeHint(plot_row->sizeHint());
-    ui->listWidget->setItemWidget(item, plot_row);
+    _list_widget->setItemWidget(item, plot_row);
 
     connect(plot_row, &EditorRowWidget::deleteRow, this,
             [this](QWidget* w) { onDeleteRow(w); });
@@ -345,15 +390,15 @@ void PlotwidgetEditor::on_pushButtonReset_clicked()
 
 void PlotwidgetEditor::on_pushButtonApplyToAll_clicked()
 {
-  auto selected_items = ui->listWidget->selectedItems();
-  if (selected_items.size() != 1 || ui->listWidget->count() == 0)
+  auto selected_items = _list_widget->selectedItems();
+  if (selected_items.size() != 1 || _list_widget->count() == 0)
   {
     return;
   }
 
   auto item = selected_items.front();
-  auto itemWidget = ui->listWidget->itemWidget(item);
-  auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+  auto itemWidget = _list_widget->itemWidget(item);
+  auto row_widget = dynamic_cast<EditorRowWidget*>(_list_widget->itemWidget(item));
   if(row_widget)
   { 
     QString curve_title = row_widget->text();
@@ -446,10 +491,10 @@ QColor EditorRowWidget::color() const
   return _color;
 }
 
-void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
+void PlotwidgetEditor::listWidgetItemSelectionChanged()
 {
-  auto selected = ui->listWidget->selectedItems();
-  if (selected.size() == 0 || ui->listWidget->count() == 0)
+  auto selected = _list_widget->selectedItems();
+  if (selected.size() == 0 || _list_widget->count() == 0)
   {
     ui->widgetColor->setEnabled(false);
     ui->editColotText->setText("#000000");
@@ -464,7 +509,7 @@ void PlotwidgetEditor::on_listWidget_itemSelectionChanged()
   }
 
   auto item = selected.front();
-  auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+  auto row_widget = dynamic_cast<EditorRowWidget*>(_list_widget->itemWidget(item));
   if (row_widget)
   {
     ui->editColotText->setText(row_widget->color().name());
@@ -502,15 +547,15 @@ void PlotwidgetEditor::updateRadioButtonsFromCurveStyle(const QString& curve_tit
 
 void PlotwidgetEditor::updateSelectedCurvesStyle(PlotWidgetBase::CurveStyle style)
 {
-  auto selected_items = ui->listWidget->selectedItems();
-  if (selected_items.size() != 1 || ui->listWidget->count() == 0)
+  auto selected_items = _list_widget->selectedItems();
+  if (selected_items.size() != 1 || _list_widget->count() == 0)
   {
     return;
   }
 
   auto item = selected_items.front();
-  auto itemWidget = ui->listWidget->itemWidget(item);
-  auto row_widget = dynamic_cast<EditorRowWidget*>(ui->listWidget->itemWidget(item));
+  auto itemWidget = _list_widget->itemWidget(item);
+  auto row_widget = dynamic_cast<EditorRowWidget*>(_list_widget->itemWidget(item));
   if(row_widget)
   { 
     QString curve_title = row_widget->text();
