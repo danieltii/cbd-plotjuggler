@@ -805,7 +805,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
           ts->setAlias(alias);
           curve->setTitle(alias);
         }
-        changeCurveStyle(curve_name, curve_style);
+        changeCurveStyle(curve_info->curve->title().text(), curve_style);
       }
     }
     //-----------------
@@ -829,7 +829,7 @@ bool PlotWidget::xmlLoadState(QDomElement& plot_widget, bool autozoom)
         curve_it->marker->setSymbol(
             new QwtSymbol(QwtSymbol::Ellipse, color, QPen(Qt::black), QSize(8, 8)));
         added_curve_names.insert(curve_name_std);
-        changeCurveStyle(curve_name, curve_style);
+        changeCurveStyle(curve_it->curve->title().text(), curve_style);
       }
     }
   }
@@ -1149,7 +1149,9 @@ void PlotWidget::on_changeCurveColor(const QString& curve_name, QColor new_color
       auto& curve = it.curve;
       if (curve->pen().color() != new_color)
       {
-        curve->setPen(new_color, 1.3);
+        auto pen = curve->pen();
+        pen.setColor(new_color);
+        curve->setPen(pen);
       }
       replot();
       break;
