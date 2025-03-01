@@ -243,7 +243,7 @@ void PlotwidgetEditor::setupTable()
   int row = 0;
   for (auto& it : _plotwidget->curveList())
   {
-    auto curve_name = QString::fromStdString(it.src_name);
+    QString curve_name = it.curve->title().text();
     auto color = colors.at(curve_name);
     auto item = new QListWidgetItem();
     // even if it is not visible, we store here the original name (not curve_name)
