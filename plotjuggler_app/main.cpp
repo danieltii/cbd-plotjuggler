@@ -113,7 +113,7 @@ QPixmap getFunnySplashscreen()
   srand(time(nullptr));
 
   auto getNum = []() {
-    const int last_image_num = 7;
+    const int last_image_num = 9;
     int n = rand() % (last_image_num + 1);
     if (n > last_image_num)
     {
@@ -378,9 +378,9 @@ int main(int argc, char* argv[])
   // {
   //   ShowChangelogDialog();
   // }
-  // else 
+  // else
   if (!parser.isSet(nosplash_option) &&
-           !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
+      !(parser.isSet(loadfile_option) || parser.isSet(layout_option)))
   // if(false) // if you uncomment this line, a kitten will die somewhere in the world.
   {
     QPixmap main_pixmap;
